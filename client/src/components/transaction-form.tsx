@@ -29,13 +29,19 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
       description: "",
       categoryId: 0,
       type: "expense",
-      date: new Date(),
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: InsertTransaction) => {
-      const res = await apiRequest("POST", "/api/transactions", data);
+      // Convert amount to number
+      const formattedData = {
+        ...data,
+        amount: Number(data.amount),
+        categoryId: Number(data.categoryId),
+      };
+      const res = await apiRequest("POST", "/api/transactions", formattedData);
       return res.json();
     },
     onSuccess: () => {
@@ -70,7 +76,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
           defaultValue="expense"
           onValueChange={(value) => {
             form.setValue("type", value);
-            form.setValue("categoryId", 0); // Reset category when type changes
+            form.setValue("categoryId", 0);
           }}
         >
           <SelectTrigger>
@@ -132,9 +138,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
         <Input
           id="date"
           type="date"
-          {...form.register("date", {
-            setValueAs: (value) => new Date(value),
-          })}
+          {...form.register("date")}
         />
       </div>
 

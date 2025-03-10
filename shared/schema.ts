@@ -50,7 +50,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   description: true,
   categoryId: true,
   type: true,
-  date: true,
+}).extend({
+  date: z.string().transform((str) => new Date(str)),
 });
 
 export const insertBudgetSchema = createInsertSchema(budgets).pick({
