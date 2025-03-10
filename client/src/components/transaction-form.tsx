@@ -35,10 +35,8 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertTransaction) => {
-      // Convert amount to number
       const formattedData = {
         ...data,
-        amount: Number(data.amount),
         categoryId: Number(data.categoryId),
       };
       const res = await apiRequest("POST", "/api/transactions", formattedData);
