@@ -89,7 +89,7 @@ export default function TransactionList({
                       : "text-red-600"
                   }
                 >
-                  ${Number(transaction.amount).toFixed(2)}
+                  PKR {Number(transaction.amount).toFixed(2)}
                 </span>
               </TableCell>
               <TableCell>

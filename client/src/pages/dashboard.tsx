@@ -56,7 +56,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                ${totalIncome.toFixed(2)}
+                PKR {totalIncome.toFixed(2)}
               </div>
             </CardContent>
           </Card>
@@ -66,7 +66,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                ${totalExpenses.toFixed(2)}
+                PKR {totalExpenses.toFixed(2)}
               </div>
             </CardContent>
           </Card>
@@ -76,7 +76,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${(totalIncome - totalExpenses).toFixed(2)}
+                PKR {(totalIncome - totalExpenses).toFixed(2)}
               </div>
             </CardContent>
           </Card>

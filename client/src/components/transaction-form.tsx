@@ -25,7 +25,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
   const form = useForm<InsertTransaction>({
     resolver: zodResolver(insertTransactionSchema),
     defaultValues: {
-      amount: 0,
+      amount: "",
       description: "",
       categoryId: 0,
       type: "expense",
@@ -77,7 +77,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
+        <Label htmlFor="amount">Amount (PKR)</Label>
         <Input
           id="amount"
           type="number"

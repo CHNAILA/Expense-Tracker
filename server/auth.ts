@@ -28,7 +28,7 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-export function setupAuth(app: Express) {
+export function setupAuth(app: Express, createDefaultCategories: (userId: number) => Promise<void>) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
     resave: false,
@@ -68,6 +68,9 @@ export function setupAuth(app: Express) {
       ...req.body,
       password: await hashPassword(req.body.password),
     });
+
+    // Create default categories for the new user
+    await createDefaultCategories(user.id);
 
     req.login(user, (err) => {
       if (err) return next(err);

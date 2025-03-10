@@ -4,8 +4,48 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertTransactionSchema, insertCategorySchema, insertBudgetSchema } from "@shared/schema";
 
+// Default categories for new users
+const DEFAULT_EXPENSE_CATEGORIES = [
+  "Food & Dining",
+  "Transportation",
+  "Utilities",
+  "Housing",
+  "Healthcare",
+  "Entertainment",
+  "Shopping",
+  "Education",
+  "Personal Care",
+  "Others"
+];
+
+const DEFAULT_INCOME_CATEGORIES = [
+  "Salary",
+  "Business",
+  "Investments",
+  "Freelance",
+  "Other Income"
+];
+
+async function createDefaultCategories(userId: number) {
+  for (const name of DEFAULT_EXPENSE_CATEGORIES) {
+    await storage.createCategory({
+      name,
+      type: "expense",
+      userId,
+    });
+  }
+
+  for (const name of DEFAULT_INCOME_CATEGORIES) {
+    await storage.createCategory({
+      name,
+      type: "income",
+      userId,
+    });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app);
+  setupAuth(app, createDefaultCategories);
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
