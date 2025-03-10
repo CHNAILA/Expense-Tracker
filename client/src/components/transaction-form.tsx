@@ -55,6 +55,10 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
     },
   });
 
+  const filteredCategories = categories.filter(
+    (category) => category.type === form.watch("type")
+  );
+
   return (
     <form
       onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
@@ -64,7 +68,10 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
         <Label htmlFor="type">Type</Label>
         <Select
           defaultValue="expense"
-          onValueChange={(value) => form.setValue("type", value)}
+          onValueChange={(value) => {
+            form.setValue("type", value);
+            form.setValue("categoryId", 0); // Reset category when type changes
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select type" />
@@ -82,13 +89,21 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
           id="amount"
           type="number"
           step="0.01"
-          {...form.register("amount", { valueAsNumber: true })}
+          min="0"
+          placeholder="Enter amount"
+          {...form.register("amount")}
         />
+        {form.formState.errors.amount && (
+          <p className="text-sm text-red-500">{form.formState.errors.amount.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
         <Input id="description" {...form.register("description")} />
+        {form.formState.errors.description && (
+          <p className="text-sm text-red-500">{form.formState.errors.description.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -100,13 +115,16 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((category) => (
+            {filteredCategories.map((category) => (
               <SelectItem key={category.id} value={category.id.toString()}>
                 {category.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {form.formState.errors.categoryId && (
+          <p className="text-sm text-red-500">{form.formState.errors.categoryId.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
