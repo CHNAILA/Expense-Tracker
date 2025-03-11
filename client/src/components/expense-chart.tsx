@@ -84,6 +84,14 @@ export default function ExpenseChart({ transactions }: ExpenseChartProps) {
       return acc;
     }, []);
 
+  // Add empty data for days with no transactions
+  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const filledWeeklyData = daysOfWeek.map(day => {
+    const existingDay = weeklyData.find(d => d.day === day);
+    return existingDay || { day, income: 0, expenses: 0 };
+  });
+
+
   // Calculate category distribution
   const categoryData = transactions
     .filter(t => t.type === "expense")
@@ -134,32 +142,32 @@ export default function ExpenseChart({ transactions }: ExpenseChartProps) {
                   <YAxis />
                   <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="income" 
-                    name="Income" 
-                    stroke="#8B5CF6" 
-                    strokeWidth={2} 
+                  <Line
+                    type="monotone"
+                    dataKey="income"
+                    name="Income"
+                    stroke="#8B5CF6"
+                    strokeWidth={2}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="expenses" 
-                    name="Expenses" 
-                    stroke="#EF4444" 
-                    strokeWidth={2} 
+                  <Line
+                    type="monotone"
+                    dataKey="expenses"
+                    name="Expenses"
+                    stroke="#EF4444"
+                    strokeWidth={2}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="savings" 
-                    name="Savings" 
-                    stroke="#10B981" 
-                    strokeWidth={2} 
+                  <Line
+                    type="monotone"
+                    dataKey="savings"
+                    name="Savings"
+                    stroke="#10B981"
+                    strokeWidth={2}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData}>
+                <BarChart data={filledWeeklyData}> {/* Use filledWeeklyData here */}
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />

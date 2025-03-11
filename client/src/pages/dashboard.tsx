@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Plus, LogOut } from "lucide-react";
 import { Transaction, Category, Budget } from "@shared/schema";
+import BudgetForm from "@/components/budget-form";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
@@ -83,10 +84,28 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Budgets</CardTitle>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Set Budget
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <h3 className="text-lg font-semibold mb-4">Set Monthly Budget</h3>
+                  <BudgetForm categories={categories || []} />
+                </SheetContent>
+              </Sheet>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{budgets?.length || 0}</div>
+              <div className="text-2xl font-bold">
+                {budgets?.filter(budget => {
+                  const now = new Date();
+                  return budget.month === now.getMonth() + 1 && budget.year === now.getFullYear();
+                }).length || 0}
+              </div>
             </CardContent>
+
           </Card>
         </div>
 
