@@ -10,12 +10,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Plus, LogOut } from "lucide-react";
 import { Transaction, Category, Budget } from "@shared/schema";
 
-// Assuming BudgetForm component exists elsewhere in the project.  If not, it needs to be created.
-const BudgetForm = ({categories}) => {
-  //Implementation for BudgetForm would go here.  This is a placeholder
-  return <div>Budget Form (Placeholder)</div>
-}
-
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
 
@@ -89,16 +83,6 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Budgets</CardTitle>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <BudgetForm categories={categories || []} />
-                </SheetContent>
-              </Sheet>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{budgets?.length || 0}</div>
