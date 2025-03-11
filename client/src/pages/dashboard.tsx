@@ -8,9 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Plus, LogOut } from "lucide-react";
 import { Transaction, Category } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
 
   const { data: transactions } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
@@ -28,8 +31,19 @@ export default function Dashboard() {
     ?.filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
+  // Monitor expenses and show alert when they exceed income
+  useEffect(() => {
+    if (totalExpenses > totalIncome && totalIncome > 0) {
+      toast({
+        title: "Expense Alert",
+        description: "Your expenses have exceeded your total income!",
+        variant: "destructive",
+      });
+    }
+  }, [totalExpenses, totalIncome, toast]);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">ExpenseTracker</h1>
@@ -43,7 +57,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-20">
         <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -106,6 +120,11 @@ export default function Dashboard() {
           categories={categories || []}
         />
       </main>
+
+      {/* Bottom navbar with message */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#663399] text-white py-4 text-center">
+        Track your spending, achieve your goals!
+      </div>
     </div>
   );
 }
