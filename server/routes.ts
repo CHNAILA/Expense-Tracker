@@ -85,6 +85,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(transaction);
   });
 
+  app.patch("/api/transactions/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const data = insertTransactionSchema.parse(req.body);
+    const transaction = await storage.updateTransaction(id, {
+      ...data,
+      userId: req.user!.id,
+    });
+    res.json(transaction);
+  });
+
   app.delete("/api/transactions/:id", requireAuth, async (req, res) => {
     await storage.deleteTransaction(parseInt(req.params.id));
     res.sendStatus(200);

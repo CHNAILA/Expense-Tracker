@@ -11,16 +11,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { insertTransactionSchema, Category, InsertTransaction } from "@shared/schema";
+import { insertTransactionSchema, Category, InsertTransaction, Transaction } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 type TransactionFormProps = {
   categories: Category[];
+  editTransaction?: Transaction;
 };
 
-export default function TransactionForm({ categories }: TransactionFormProps) {
+export default function TransactionForm({ categories, editTransaction }: TransactionFormProps) {
   const { toast } = useToast();
   const form = useForm<InsertTransaction>({
     resolver: zodResolver(insertTransactionSchema),
@@ -33,21 +35,45 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
     },
   });
 
+  // Set form values when editing
+  useEffect(() => {
+    if (editTransaction) {
+      form.reset({
+        amount: editTransaction.amount.toString(),
+        description: editTransaction.description,
+        categoryId: editTransaction.categoryId,
+        type: editTransaction.type,
+        date: new Date(editTransaction.date).toISOString().split('T')[0],
+      });
+    }
+  }, [editTransaction, form]);
+
   const mutation = useMutation({
     mutationFn: async (data: InsertTransaction) => {
       const formattedData = {
         ...data,
         categoryId: Number(data.categoryId),
       };
-      const res = await apiRequest("POST", "/api/transactions", formattedData);
+
+      const url = editTransaction 
+        ? `/api/transactions/${editTransaction.id}`
+        : "/api/transactions";
+
+      const method = editTransaction ? "PATCH" : "POST";
+
+      const res = await apiRequest(method, url, formattedData);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-      form.reset();
+      if (!editTransaction) {
+        form.reset();
+      }
       toast({
         title: "Success",
-        description: "Transaction added successfully",
+        description: editTransaction 
+          ? "Transaction updated successfully"
+          : "Transaction added successfully",
       });
     },
     onError: (error: Error) => {
@@ -71,7 +97,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
       <div className="space-y-2">
         <Label htmlFor="type">Type</Label>
         <Select
-          defaultValue="expense"
+          defaultValue={editTransaction?.type || "expense"}
           onValueChange={(value) => {
             form.setValue("type", value);
             form.setValue("categoryId", 0);
@@ -114,6 +140,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
         <Label htmlFor="category">Category</Label>
         <Select
           onValueChange={(value) => form.setValue("categoryId", parseInt(value))}
+          defaultValue={editTransaction?.categoryId.toString()}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
@@ -142,7 +169,7 @@ export default function TransactionForm({ categories }: TransactionFormProps) {
 
       <Button type="submit" className="w-full" disabled={mutation.isPending}>
         {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Add Transaction
+        {editTransaction ? 'Update Transaction' : 'Add Transaction'}
       </Button>
     </form>
   );
