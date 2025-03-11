@@ -116,6 +116,11 @@ export class MemStorage implements IStorage {
     this.budgets.set(id, updated);
     return updated;
   }
+
+  async deleteBudget(id: number): Promise<void> {
+    if (!this.budgets.has(id)) throw new Error("Budget not found");
+    this.budgets.delete(id);
+  }
 }
 
 export const storage = new MemStorage();

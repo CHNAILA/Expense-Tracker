@@ -105,6 +105,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(budget);
   });
 
+  app.delete("/api/budgets/:id", requireAuth, async (req, res) => {
+    await storage.deleteBudget(parseInt(req.params.id));
+    res.sendStatus(200);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
