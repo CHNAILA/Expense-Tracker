@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  cnic: text("cnic").notNull().unique(),
 });
 
 export const categories = pgTable("categories", {
@@ -38,6 +39,9 @@ export const budgets = pgTable("budgets", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  cnic: true,
+}).extend({
+  cnic: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "Invalid CNIC format (e.g., 12345-1234567-1)"),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).pick({

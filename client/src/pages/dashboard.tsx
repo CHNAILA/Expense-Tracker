@@ -9,11 +9,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Plus, LogOut } from "lucide-react";
 import { Transaction, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
+  const [showBottomNav, setShowBottomNav] = useState(false);
 
   const { data: transactions } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
@@ -42,13 +43,24 @@ export default function Dashboard() {
     }
   }, [totalExpenses, totalIncome, toast]);
 
+  // Handle scroll for bottom navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const bottom = Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight;
+      setShowBottomNav(bottom);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background relative">
-      <header className="border-b">
+    <div className="min-h-screen bg-[#0D1321]">
+      <header className="border-b border-[#C5832B]/20">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">ExpenseTracker</h1>
+          <h1 className="text-2xl font-bold text-[#C5832B]">ExpenseTracker</h1>
           <div className="flex items-center gap-4">
-            <span className="text-muted-foreground">Welcome, {user?.username}</span>
+            <span className="text-[#C5832B]/80">Welcome, {user?.username}</span>
             <Button variant="outline" size="sm" onClick={() => logoutMutation.mutate()}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -59,9 +71,9 @@ export default function Dashboard() {
 
       <main className="container mx-auto px-4 py-8 pb-20">
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card>
+          <Card className="bg-[#0D1321] border-[#C5832B]/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+              <CardTitle className="text-sm font-medium text-[#C5832B]">Total Income</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
@@ -69,9 +81,9 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-[#0D1321] border-[#C5832B]/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <CardTitle className="text-sm font-medium text-[#C5832B]">Total Expenses</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
@@ -79,21 +91,21 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-[#0D1321] border-[#C5832B]/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance</CardTitle>
+              <CardTitle className="text-sm font-medium text-[#C5832B]">Balance</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-[#C5832B]">
                 PKR {(totalIncome - totalExpenses).toFixed(2)}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="mb-8">
+        <Card className="mb-8 bg-[#0D1321] border-[#C5832B]/20">
           <CardHeader>
-            <CardTitle>Expense Overview</CardTitle>
+            <CardTitle className="text-[#C5832B]">Expense Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <ExpenseChart transactions={transactions || []} />
@@ -101,10 +113,10 @@ export default function Dashboard() {
         </Card>
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Recent Transactions</h2>
+          <h2 className="text-xl font-bold text-[#C5832B]">Recent Transactions</h2>
           <Sheet>
             <SheetTrigger asChild>
-              <Button>
+              <Button className="bg-[#C5832B] hover:bg-[#C5832B]/90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Transaction
               </Button>
@@ -121,10 +133,12 @@ export default function Dashboard() {
         />
       </main>
 
-      {/* Bottom navbar with message */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#663399] text-white py-4 text-center">
-        Track your spending, achieve your goals!
-      </div>
+      {/* Bottom navbar with message - only shows when scrolled to bottom */}
+      {showBottomNav && (
+        <div className="fixed bottom-0 left-0 right-0 bg-[#C5832B] text-white py-4 text-center">
+          Track your spending, achieve your goals!
+        </div>
+      )}
     </div>
   );
 }
