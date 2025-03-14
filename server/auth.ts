@@ -16,17 +16,29 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
+  const salt = "1234567890123456"; // Fixed salt for test users
   const derivedKey = (await scryptAsync(password, salt, 32)) as Buffer;
   return `${derivedKey.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
+    console.log("Comparing passwords");
+    console.log("Supplied password:", supplied);
+    console.log("Stored password format:", stored);
+
     const [hashedPassword, salt] = stored.split(".");
+    console.log("Split stored password - hash:", hashedPassword, "salt:", salt);
+
     const derivedKey = (await scryptAsync(supplied, salt, 32)) as Buffer;
+    console.log("Derived key from supplied password:", derivedKey.toString("hex"));
+
     const storedDerivedKey = Buffer.from(hashedPassword, "hex");
-    return timingSafeEqual(derivedKey, storedDerivedKey);
+    console.log("Stored derived key:", storedDerivedKey.toString("hex"));
+
+    const result = timingSafeEqual(derivedKey, storedDerivedKey);
+    console.log("Password comparison result:", result);
+    return result;
   } catch (error) {
     console.error("Error comparing passwords:", error);
     return false;
@@ -49,18 +61,24 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log("Attempting login for username:", username);
         const user = await storage.getUserByUsername(username);
+
         if (!user) {
           console.log("User not found:", username);
           return done(null, false);
         }
 
+        console.log("User found, checking password");
         const isValidPassword = await comparePasswords(password, user.password);
+        console.log("Password valid:", isValidPassword);
+
         if (!isValidPassword) {
           console.log("Invalid password for user:", username);
           return done(null, false);
         }
 
+        console.log("Login successful for user:", username);
         return done(null, user);
       } catch (err) {
         console.error("Error in LocalStrategy:", err);
@@ -82,7 +100,7 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
   app.post("/api/login", async (req, res, next) => {
     try {
       const { username, password, cnic } = req.body;
-      console.log("Login attempt for username:", username);
+      console.log("Login attempt - username:", username, "cnic:", cnic);
 
       const user = await storage.getUserByUsername(username);
       if (!user) {
@@ -92,6 +110,8 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
 
       if (user.cnic !== cnic) {
         console.log("Invalid CNIC for user:", username);
+        console.log("Provided CNIC:", cnic);
+        console.log("Stored CNIC:", user.cnic);
         return res.status(401).send("Invalid CNIC");
       }
 
