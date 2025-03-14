@@ -47,6 +47,20 @@ export class DatabaseStorage implements IStorage {
     return newUser;
   }
 
+  async getUserByCNIC(cnic: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.cnic, cnic));
+    return user;
+  }
+
+  async updateUserUsername(id: number, username: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ username })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
   // Category operations
   async getCategories(userId: number): Promise<Category[]> {
     return await db.select().from(categories).where(eq(categories.userId, userId));

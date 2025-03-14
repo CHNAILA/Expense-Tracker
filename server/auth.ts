@@ -24,20 +24,6 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user) {
-          return done(null, false);
-        }
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    }),
-  );
-
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
     try {
@@ -51,20 +37,20 @@ export function setupAuth(app: Express) {
   app.post("/api/login", async (req, res, next) => {
     try {
       const { username, cnic } = req.body;
-      const user = await storage.getUserByUsername(username);
+
+      // Find user by CNIC instead of username
+      const user = await storage.getUserByCNIC(cnic);
 
       if (!user) {
-        return res.status(401).send("Invalid credentials");
-      }
-
-      if (user.cnic !== cnic) {
         return res.status(401).send("Invalid CNIC");
       }
 
-      // Skip password check and log the user in directly
-      req.login(user, (err) => {
+      // Create/update user with the new username
+      const updatedUser = await storage.updateUserUsername(user.id, username);
+
+      req.login(updatedUser, (err) => {
         if (err) return next(err);
-        res.status(200).json(user);
+        res.status(200).json(updatedUser);
       });
     } catch (err) {
       next(err);

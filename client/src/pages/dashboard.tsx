@@ -58,7 +58,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#0D1321]">
       <header className="border-b border-[#C5832B]/20">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-[#C5832B]">ExpenseTracker</h1>
+          <h1 className="text-2xl font-bold text-[#C5832B]">Your Money, Your Control!</h1>
           <div className="flex items-center gap-4">
             <span className="text-[#C5832B]/80">Welcome, {user?.username}</span>
             <Button variant="outline" size="sm" onClick={() => logoutMutation.mutate()}>
