@@ -43,11 +43,14 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
+        }
         return done(null, user);
+      } catch (err) {
+        return done(err);
       }
     }),
   );
@@ -78,8 +81,33 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
     });
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", async (req, res, next) => {
+    try {
+      const { username, password, cnic } = req.body;
+
+      // First check if user exists and CNIC matches
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).send("Invalid credentials");
+      }
+
+      if (user.cnic !== cnic) {
+        return res.status(401).send("Invalid CNIC");
+      }
+
+      // Then use passport for password verification
+      passport.authenticate("local", (err: any, user: any) => {
+        if (err) return next(err);
+        if (!user) return res.status(401).send("Invalid credentials");
+
+        req.login(user, (err) => {
+          if (err) return next(err);
+          res.status(200).json(user);
+        });
+      })(req, res, next);
+    } catch (err) {
+      next(err);
+    }
   });
 
   app.post("/api/logout", (req, res, next) => {

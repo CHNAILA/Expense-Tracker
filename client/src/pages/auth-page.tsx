@@ -24,7 +24,8 @@ export default function AuthPage() {
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md bg-[#0D1321] border-[#C5832B]/20">
           <CardHeader>
-            <CardTitle className="text-[#C5832B]">Welcome to ExpenseTracker</CardTitle>
+            <CardTitle className="text-[#C5832B] text-3xl mb-2">Welcome to Your</CardTitle>
+            <CardTitle className="text-[#C5832B] text-4xl font-bold">Expense Tracker</CardTitle>
           </CardHeader>
           <CardContent>
             <LoginForm />
