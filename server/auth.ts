@@ -17,15 +17,15 @@ const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  const derivedKey = (await scryptAsync(password, salt, 32)) as Buffer;
+  return `${derivedKey.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  const [hashedPassword, salt] = stored.split(".");
+  const derivedKey = (await scryptAsync(supplied, salt, 32)) as Buffer;
+  const storedDerivedKey = Buffer.from(hashedPassword, "hex");
+  return timingSafeEqual(derivedKey, storedDerivedKey);
 }
 
 export function setupAuth(app: Express, createDefaultCategories: (userId: number) => Promise<void>) {
