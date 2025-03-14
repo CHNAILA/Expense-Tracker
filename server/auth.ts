@@ -22,10 +22,15 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashedPassword, salt] = stored.split(".");
-  const derivedKey = (await scryptAsync(supplied, salt, 32)) as Buffer;
-  const storedDerivedKey = Buffer.from(hashedPassword, "hex");
-  return timingSafeEqual(derivedKey, storedDerivedKey);
+  try {
+    const [hashedPassword, salt] = stored.split(".");
+    const derivedKey = (await scryptAsync(supplied, salt, 32)) as Buffer;
+    const storedDerivedKey = Buffer.from(hashedPassword, "hex");
+    return timingSafeEqual(derivedKey, storedDerivedKey);
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express, createDefaultCategories: (userId: number) => Promise<void>) {
@@ -45,11 +50,20 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user) {
+          console.log("User not found:", username);
           return done(null, false);
         }
+
+        const isValidPassword = await comparePasswords(password, user.password);
+        if (!isValidPassword) {
+          console.log("Invalid password for user:", username);
+          return done(null, false);
+        }
+
         return done(null, user);
       } catch (err) {
+        console.error("Error in LocalStrategy:", err);
         return done(err);
       }
     }),
@@ -57,55 +71,51 @@ export function setupAuth(app: Express, createDefaultCategories: (userId: number
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
-  });
-
-  app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (err) {
+      done(err);
     }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    // Create default categories for the new user
-    await createDefaultCategories(user.id);
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
   app.post("/api/login", async (req, res, next) => {
     try {
       const { username, password, cnic } = req.body;
+      console.log("Login attempt for username:", username);
 
-      // First check if user exists and CNIC matches
       const user = await storage.getUserByUsername(username);
       if (!user) {
+        console.log("User not found during login:", username);
         return res.status(401).send("Invalid credentials");
       }
 
       if (user.cnic !== cnic) {
+        console.log("Invalid CNIC for user:", username);
         return res.status(401).send("Invalid CNIC");
       }
 
-      // Then use passport for password verification
       passport.authenticate("local", (err: any, user: any) => {
-        if (err) return next(err);
-        if (!user) return res.status(401).send("Invalid credentials");
+        if (err) {
+          console.error("Authentication error:", err);
+          return next(err);
+        }
+        if (!user) {
+          console.log("Authentication failed for user:", username);
+          return res.status(401).send("Invalid credentials");
+        }
 
         req.login(user, (err) => {
-          if (err) return next(err);
+          if (err) {
+            console.error("Login error:", err);
+            return next(err);
+          }
+          console.log("Login successful for user:", username);
           res.status(200).json(user);
         });
       })(req, res, next);
     } catch (err) {
+      console.error("Unexpected error during login:", err);
       next(err);
     }
   });
