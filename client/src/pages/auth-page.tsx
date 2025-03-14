@@ -3,9 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { insertUserSchema } from "@shared/schema";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
@@ -56,10 +54,8 @@ export default function AuthPage() {
 function LoginForm() {
   const { loginMutation } = useAuth();
   const form = useForm({
-    resolver: zodResolver(insertUserSchema),
     defaultValues: {
       username: "",
-      password: "",
       cnic: "",
     },
   });
@@ -72,9 +68,6 @@ function LoginForm() {
       <div className="space-y-2">
         <Label htmlFor="username">Username</Label>
         <Input id="username" {...form.register("username")} />
-        {form.formState.errors.username && (
-          <p className="text-sm text-red-500">{form.formState.errors.username.message}</p>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -84,21 +77,6 @@ function LoginForm() {
           placeholder="12345-1234567-1"
           {...form.register("cnic")}
         />
-        {form.formState.errors.cnic && (
-          <p className="text-sm text-red-500">{form.formState.errors.cnic.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          {...form.register("password")}
-        />
-        {form.formState.errors.password && (
-          <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
-        )}
       </div>
 
       <Button
