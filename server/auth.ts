@@ -1,6 +1,5 @@
 import passport from "passport";
 import { Express } from "express";
-import session from "express-session";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -11,25 +10,7 @@ declare global {
 }
 
 export function setupAuth(app: Express) {
-  if (!process.env.SESSION_SECRET) {
-    throw new Error("SESSION_SECRET environment variable is required");
-  }
-
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-  };
-
-  // Important: Set up session before passport
-  app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
+  // Initialize passport after session is set up in index.ts
   app.use(passport.initialize());
   app.use(passport.session());
 
