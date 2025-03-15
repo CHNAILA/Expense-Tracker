@@ -57,7 +57,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Categories
   app.get("/api/categories", requireAuth, async (req, res) => {
-    const categories = await storage.getCategories(req.user!.id);
+    const userId = req.user!.id;
+    const categories = await storage.getCategories(userId);
     res.json(categories);
   });
 
@@ -72,7 +73,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Transactions
   app.get("/api/transactions", requireAuth, async (req, res) => {
-    const transactions = await storage.getTransactions(req.user!.id);
+    const userId = req.user!.id;
+    const transactions = await storage.getTransactions(userId);
     res.json(transactions);
   });
 
