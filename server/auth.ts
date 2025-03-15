@@ -11,8 +11,12 @@ declare global {
 }
 
 export function setupAuth(app: Express) {
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -23,6 +27,7 @@ export function setupAuth(app: Express) {
     },
   };
 
+  // Important: Set up session before passport
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
