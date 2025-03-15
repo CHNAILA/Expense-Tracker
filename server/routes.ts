@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
-  // Create default categories for new users
+  // Handle login and user creation
   app.post("/api/login", async (req, res, next) => {
     try {
       const { username, cnic } = req.body;
@@ -65,11 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create new user with default categories
         user = await storage.createUser({ username, cnic, password: cnic }); // Using CNIC as password
         await createDefaultCategories(user.id);
-      } else {
-        // Update username if it changed
-        user = await storage.updateUserUsername(user.id, username);
       }
 
+      // Log in the user
       req.login(user, (err) => {
         if (err) return next(err);
         res.status(200).json(user);
@@ -77,6 +75,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       next(err);
     }
+  });
+
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.sendStatus(200);
+    });
   });
 
   // Categories

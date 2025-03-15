@@ -1,5 +1,4 @@
 import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import { storage } from "./storage";
@@ -32,36 +31,6 @@ export function setupAuth(app: Express) {
     } catch (err) {
       done(err);
     }
-  });
-
-  app.post("/api/login", async (req, res, next) => {
-    try {
-      const { username, cnic } = req.body;
-
-      // Find user by CNIC instead of username
-      const user = await storage.getUserByCNIC(cnic);
-
-      if (!user) {
-        return res.status(401).send("Invalid CNIC");
-      }
-
-      // Create/update user with the new username
-      const updatedUser = await storage.updateUserUsername(user.id, username);
-
-      req.login(updatedUser, (err) => {
-        if (err) return next(err);
-        res.status(200).json(updatedUser);
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
   });
 
   app.get("/api/user", (req, res) => {
