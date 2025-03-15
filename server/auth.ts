@@ -16,6 +16,11 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
   };
 
   app.set("trust proxy", 1);
@@ -23,10 +28,18 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  // Serialize only the user ID to the session
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+
+  // Deserialize by fetching fresh user data each time
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (err) {
       done(err);
