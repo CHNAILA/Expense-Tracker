@@ -59,17 +59,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/login", async (req, res, next) => {
     try {
       const { username, cnic } = req.body;
-
-      // First destroy any existing session
-      if (req.session) {
-        await new Promise<void>((resolve, reject) => {
-          req.session.destroy((err) => {
-            if (err) reject(err);
-            resolve();
-          });
-        });
-      }
-
       let user = await storage.getUserByCNIC(cnic);
 
       if (!user) {
