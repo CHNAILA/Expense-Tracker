@@ -45,7 +45,7 @@ async function createDefaultCategories(userId: number) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app, createDefaultCategories);
+  setupAuth(app);
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
@@ -54,6 +54,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
+
+  // Create default categories for new users
+  app.post("/api/login", async (req, res, next) => {
+    try {
+      const { username, cnic } = req.body;
+      let user = await storage.getUserByCNIC(cnic);
+
+      if (!user) {
+        // Create new user with default categories
+        user = await storage.createUser({ username, cnic, password: cnic }); // Using CNIC as password
+        await createDefaultCategories(user.id);
+      } else {
+        // Update username if it changed
+        user = await storage.updateUserUsername(user.id, username);
+      }
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(200).json(user);
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // Categories
   app.get("/api/categories", requireAuth, async (req, res) => {
@@ -89,22 +113,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/transactions/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
+    const userId = req.user!.id;
     const data = insertTransactionSchema.parse(req.body);
-    const transaction = await storage.updateTransaction(id, {
+    const transaction = await storage.updateTransaction(id, userId, {
       ...data,
       userId: req.user!.id,
     });
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
     res.json(transaction);
   });
 
   app.delete("/api/transactions/:id", requireAuth, async (req, res) => {
-    await storage.deleteTransaction(parseInt(req.params.id));
+    const id = parseInt(req.params.id);
+    const userId = req.user!.id;
+    await storage.deleteTransaction(id, userId);
     res.sendStatus(200);
   });
 
   // Budgets
   app.get("/api/budgets", requireAuth, async (req, res) => {
-    const budgets = await storage.getBudgets(req.user!.id);
+    const userId = req.user!.id;
+    const budgets = await storage.getBudgets(userId);
     res.json(budgets);
   });
 
