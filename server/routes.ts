@@ -59,6 +59,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/login", async (req, res, next) => {
     try {
       const { username, cnic } = req.body;
+
+      // First destroy any existing session
+      if (req.session) {
+        await new Promise<void>((resolve, reject) => {
+          req.session.destroy((err) => {
+            if (err) reject(err);
+            resolve();
+          });
+        });
+      }
+
       let user = await storage.getUserByCNIC(cnic);
 
       if (!user) {
@@ -67,12 +78,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await createDefaultCategories(user.id);
       }
 
-      req.session.cnic = cnic; //Store CNIC in session
-
       // Log in the user
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json({user, message: "Login Successful"});
+        res.status(200).json(user);
       });
     } catch (err) {
       next(err);
@@ -82,17 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      req.session.destroy(); //Added session destruction
       res.sendStatus(200);
     });
   });
 
   // Categories
   app.get("/api/categories", requireAuth, async (req, res) => {
-    if (!req.user || !req.session.cnic) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const categories = await storage.getCategories(userId);
     res.json(categories);
   });
@@ -108,10 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Transactions
   app.get("/api/transactions", requireAuth, async (req, res) => {
-    if (!req.user || !req.session.cnic) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const transactions = await storage.getTransactions(userId);
     res.json(transactions);
   });

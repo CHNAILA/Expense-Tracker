@@ -22,12 +22,11 @@ import { pool } from "./db";
 const PostgresSessionStore = connectPg(session);
 
 export class DatabaseStorage implements IStorage {
-  public sessionStore: session.Store;
+  public sessionStore: session.SessionStore;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
       pool,
-      tableName: 'session',
       createTableIfMissing: true,
     });
   }
