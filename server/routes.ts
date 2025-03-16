@@ -49,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated() || !req.session.cnic) { // Added CNIC check
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     next();
