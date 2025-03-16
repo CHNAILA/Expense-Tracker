@@ -24,6 +24,7 @@ type TransactionFormProps = {
 
 export default function TransactionForm({ categories, editTransaction }: TransactionFormProps) {
   const { toast } = useToast();
+
   const form = useForm<InsertTransaction>({
     resolver: zodResolver(insertTransactionSchema),
     defaultValues: {
@@ -31,7 +32,7 @@ export default function TransactionForm({ categories, editTransaction }: Transac
       description: "",
       categoryId: 0,
       type: "expense",
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().slice(0, 10), // Format as YYYY-MM-DD
     },
   });
 
@@ -43,7 +44,7 @@ export default function TransactionForm({ categories, editTransaction }: Transac
         description: editTransaction.description,
         categoryId: editTransaction.categoryId,
         type: editTransaction.type,
-        date: new Date(editTransaction.date).toISOString().split('T')[0],
+        date: new Date(editTransaction.date).toISOString().slice(0, 10),
       });
     }
   }, [editTransaction, form]);
@@ -85,10 +86,6 @@ export default function TransactionForm({ categories, editTransaction }: Transac
     },
   });
 
-  const filteredCategories = categories.filter(
-    (category) => category.type === form.watch("type")
-  );
-
   return (
     <form
       onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
@@ -97,10 +94,10 @@ export default function TransactionForm({ categories, editTransaction }: Transac
       <div className="space-y-2">
         <Label htmlFor="type">Type</Label>
         <Select
-          defaultValue={editTransaction?.type || "expense"}
+          value={form.watch("type")}
           onValueChange={(value) => {
-            form.setValue("type", value);
-            form.setValue("categoryId", 0);
+            form.setValue("type", value as "income" | "expense");
+            form.setValue("categoryId", 0); // Reset category when type changes
           }}
         >
           <SelectTrigger>
@@ -111,6 +108,30 @@ export default function TransactionForm({ categories, editTransaction }: Transac
             <SelectItem value="income">Income</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="category">Category</Label>
+        <Select
+          value={form.watch("categoryId").toString()}
+          onValueChange={(value) => form.setValue("categoryId", parseInt(value))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories
+              .filter(category => category.type === form.watch("type"))
+              .map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        {form.formState.errors.categoryId && (
+          <p className="text-sm text-red-500">{form.formState.errors.categoryId.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -130,33 +151,13 @@ export default function TransactionForm({ categories, editTransaction }: Transac
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Input id="description" {...form.register("description")} />
+        <Input 
+          id="description" 
+          placeholder="Enter description"
+          {...form.register("description")} 
+        />
         {form.formState.errors.description && (
           <p className="text-sm text-red-500">{form.formState.errors.description.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="category">Category</Label>
-        <Select
-          onValueChange={(value) => form.setValue("categoryId", parseInt(value))}
-          defaultValue={editTransaction?.categoryId?.toString()}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories
-              .filter(category => category.type === form.watch("type"))
-              .map((category) => (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  {category.name}
-                </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {form.formState.errors.categoryId && (
-          <p className="text-sm text-red-500">{form.formState.errors.categoryId.message}</p>
         )}
       </div>
 
