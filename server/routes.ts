@@ -45,7 +45,7 @@ async function createDefaultCategories(userId: number) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app);
+  setupAuth(app, createDefaultCategories);
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
@@ -54,46 +54,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
-
-  // Handle login and user creation
-  app.post("/api/login", async (req, res, next) => {
-    try {
-      const { username, cnic } = req.body;
-
-      // First destroy any existing session
-      if (req.session) {
-        await new Promise<void>((resolve, reject) => {
-          req.session.destroy((err) => {
-            if (err) reject(err);
-            resolve();
-          });
-        });
-      }
-
-      let user = await storage.getUserByCNIC(cnic);
-
-      if (!user) {
-        // Create new user with default categories
-        user = await storage.createUser({ username, cnic, password: cnic }); // Using CNIC as password
-        await createDefaultCategories(user.id);
-      }
-
-      // Log in the user
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(200).json(user);
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
-  });
 
   // Categories
   app.get("/api/categories", requireAuth, async (req, res) => {
@@ -129,29 +89,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/transactions/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const userId = req.user!.id;
     const data = insertTransactionSchema.parse(req.body);
-    const transaction = await storage.updateTransaction(id, userId, {
+    const transaction = await storage.updateTransaction(id, {
       ...data,
       userId: req.user!.id,
     });
-    if (!transaction) {
-      return res.status(404).json({ message: "Transaction not found" });
-    }
     res.json(transaction);
   });
 
   app.delete("/api/transactions/:id", requireAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const userId = req.user!.id;
-    await storage.deleteTransaction(id, userId);
+    await storage.deleteTransaction(parseInt(req.params.id));
     res.sendStatus(200);
   });
 
   // Budgets
   app.get("/api/budgets", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
-    const budgets = await storage.getBudgets(userId);
+    const budgets = await storage.getBudgets(req.user!.id);
     res.json(budgets);
   });
 

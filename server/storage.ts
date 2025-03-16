@@ -14,7 +14,7 @@ import {
   budgets,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -63,11 +63,7 @@ export class DatabaseStorage implements IStorage {
 
   // Category operations
   async getCategories(userId: number): Promise<Category[]> {
-    return await db
-      .select()
-      .from(categories)
-      .where(eq(categories.userId, userId))
-      .orderBy(categories.name);
+    return await db.select().from(categories).where(eq(categories.userId, userId));
   }
 
   async createCategory(category: InsertCategory & { userId: number }): Promise<Category> {
@@ -77,11 +73,7 @@ export class DatabaseStorage implements IStorage {
 
   // Transaction operations
   async getTransactions(userId: number): Promise<Transaction[]> {
-    return await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.userId, userId))
-      .orderBy(transactions.date);
+    return await db.select().from(transactions).where(eq(transactions.userId, userId));
   }
 
   async createTransaction(
@@ -96,38 +88,23 @@ export class DatabaseStorage implements IStorage {
 
   async updateTransaction(
     id: number,
-    userId: number,
     transaction: InsertTransaction & { userId: number },
-  ): Promise<Transaction | undefined> {
+  ): Promise<Transaction> {
     const [updatedTransaction] = await db
       .update(transactions)
       .set(transaction)
-      .where(
-        and(
-          eq(transactions.id, id),
-          eq(transactions.userId, userId)
-        )
-      )
+      .where(eq(transactions.id, id))
       .returning();
     return updatedTransaction;
   }
 
-  async deleteTransaction(id: number, userId: number): Promise<void> {
-    await db.delete(transactions).where(
-      and(
-        eq(transactions.id, id),
-        eq(transactions.userId, userId)
-      )
-    );
+  async deleteTransaction(id: number): Promise<void> {
+    await db.delete(transactions).where(eq(transactions.id, id));
   }
 
   // Budget operations
   async getBudgets(userId: number): Promise<Budget[]> {
-    return await db
-      .select()
-      .from(budgets)
-      .where(eq(budgets.userId, userId))
-      .orderBy(budgets.year, budgets.month);
+    return await db.select().from(budgets).where(eq(budgets.userId, userId));
   }
 
   async createBudget(budget: InsertBudget & { userId: number }): Promise<Budget> {
