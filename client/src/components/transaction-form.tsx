@@ -147,7 +147,7 @@ export default function TransactionForm({ categories, editTransaction }: Transac
           </SelectTrigger>
           <SelectContent>
             {categories
-              .filter(category => category.type === form.watch("type"))
+              .filter(category => category.type === form.getValues("type"))
               .map((category) => (
                 <SelectItem key={category.id} value={category.id.toString()}>
                   {category.name}
