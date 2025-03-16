@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertTransactionSchema, insertCategorySchema, insertBudgetSchema } from "@shared/schema";
 
@@ -45,8 +44,6 @@ async function createDefaultCategories(userId: number) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app, createDefaultCategories);
-
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
@@ -54,6 +51,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
+
+  // Handle login and user creation
+  app.post("/api/login", async (req, res, next) => {
+    try {
+      const { username, cnic } = req.body;
+
+      // First destroy any existing session
+      if (req.session) {
+        await new Promise<void>((resolve, reject) => {
+          req.session.destroy((err) => {
+            if (err) reject(err);
+            resolve();
+          });
+        });
+      }
+
+      // Find or create user
+      let user = await storage.getUserByCNIC(cnic);
+
+      if (!user) {
+        // Create new user with default categories
+        user = await storage.createUser({ username, cnic, password: cnic });
+        await createDefaultCategories(user.id);
+      }
+
+      // Log in the user
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error:", err);
+          return next(err);
+        }
+        res.json(user);
+      });
+    } catch (err) {
+      console.error("Login route error:", err);
+      next(err);
+    }
+  });
+
+  // Handle logout
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        res.sendStatus(200);
+      });
+    });
+  });
 
   // Categories
   app.get("/api/categories", requireAuth, async (req, res) => {
@@ -89,22 +135,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/transactions/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
+    const userId = req.user!.id;
     const data = insertTransactionSchema.parse(req.body);
-    const transaction = await storage.updateTransaction(id, {
+    const transaction = await storage.updateTransaction(id, userId, {
       ...data,
       userId: req.user!.id,
     });
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
     res.json(transaction);
   });
 
   app.delete("/api/transactions/:id", requireAuth, async (req, res) => {
-    await storage.deleteTransaction(parseInt(req.params.id));
+    const id = parseInt(req.params.id);
+    const userId = req.user!.id;
+    await storage.deleteTransaction(id, userId);
     res.sendStatus(200);
   });
 
   // Budgets
   app.get("/api/budgets", requireAuth, async (req, res) => {
-    const budgets = await storage.getBudgets(req.user!.id);
+    const userId = req.user!.id;
+    const budgets = await storage.getBudgets(userId);
     res.json(budgets);
   });
 
