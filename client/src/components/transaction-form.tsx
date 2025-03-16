@@ -140,16 +140,18 @@ export default function TransactionForm({ categories, editTransaction }: Transac
         <Label htmlFor="category">Category</Label>
         <Select
           onValueChange={(value) => form.setValue("categoryId", parseInt(value))}
-          defaultValue={editTransaction?.categoryId.toString()}
+          defaultValue={editTransaction?.categoryId?.toString()}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
-            {filteredCategories.map((category) => (
-              <SelectItem key={category.id} value={category.id.toString()}>
-                {category.name}
-              </SelectItem>
+            {categories
+              .filter(category => category.type === form.getValues("type"))
+              .map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
             ))}
           </SelectContent>
         </Select>
