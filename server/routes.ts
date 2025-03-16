@@ -49,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated() || !req.session.cnic) { // Added CNIC check
       return res.status(401).json({ message: "Unauthorized" });
     }
     next();
@@ -67,10 +67,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await createDefaultCategories(user.id);
       }
 
+      req.session.cnic = cnic; //Store CNIC in session
+
       // Log in the user
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json(user);
+        res.status(200).json({user, message: "Login Successful"});
       });
     } catch (err) {
       next(err);
@@ -80,13 +82,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
+      req.session.destroy(); //Added session destruction
       res.sendStatus(200);
     });
   });
 
   // Categories
   app.get("/api/categories", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    if (!req.user || !req.session.cnic) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = req.user.id;
     const categories = await storage.getCategories(userId);
     res.json(categories);
   });
@@ -102,7 +108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Transactions
   app.get("/api/transactions", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    if (!req.user || !req.session.cnic) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = req.user.id;
     const transactions = await storage.getTransactions(userId);
     res.json(transactions);
   });
