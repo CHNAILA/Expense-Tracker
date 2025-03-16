@@ -37,17 +37,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Debug endpoint to check session status
-  app.get("/api/debug-session", (req, res) => {
-    res.json({
-      sessionID: req.sessionID,
-      session: req.session,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user
-    });
-  });
-
-  // User endpoint
+  // User endpoint to check current session
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);

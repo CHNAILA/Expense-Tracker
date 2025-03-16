@@ -17,7 +17,7 @@ app.set("trust proxy", 1);
 
 (async () => {
   try {
-    // Test database connection before setting up session store
+    // Test database connection before starting
     await pool.query('SELECT NOW()');
     log('Database connection successful');
 
@@ -28,13 +28,13 @@ app.set("trust proxy", 1);
       tableName: 'session'
     });
 
-    // Set up session middleware with detailed configuration
+    // Set up session middleware first
     app.use(
       session({
         store: sessionStore,
         secret: process.env.SESSION_SECRET!,
         resave: false,
-        saveUninitialized: false,
+        saveUninitialized: true, // Changed to true to ensure session is always created
         cookie: {
           secure: process.env.NODE_ENV === "production",
           httpOnly: true,
@@ -44,7 +44,7 @@ app.set("trust proxy", 1);
       })
     );
 
-    // Debug logging for session initialization
+    // Debug logging for session middleware
     app.use((req, _res, next) => {
       if (process.env.NODE_ENV !== "production") {
         log(`Session ID: ${req.sessionID}`);
@@ -57,7 +57,7 @@ app.set("trust proxy", 1);
     setupAuth(app);
     log('Authentication configured successfully');
 
-    // Register routes after auth setup
+    // Register routes
     const server = await registerRoutes(app);
 
     // Error handling middleware
