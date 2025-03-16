@@ -51,27 +51,10 @@ export default function ExpenseChart({ transactions }: ExpenseChartProps) {
   // Get weekly data
   const now = new Date();
   const weekStart = startOfWeek(now);
-  const weeklyData = daysOfWeek.map(({ date }) => {
-    const dayTransactions = transactions.filter(t => {
-      const txDate = new Date(t.date);
-      return format(txDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-    });
-    
-    const income = dayTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-      
-    const expenses = dayTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-      
-    return {
-      day: format(date, 'EEE'),
-      income,
-      expenses,
-      savings: income - expenses
-    };
-  });
+  const daysOfWeek = Array.from({ length: 7 }, (_, i) => ({
+    date: addDays(weekStart, i),
+    day: format(addDays(weekStart, i), 'EEE')
+  }));
 
   const weeklyData = daysOfWeek.map(({ date, day }) => {
     const dayTransactions = transactions.filter(t => {
